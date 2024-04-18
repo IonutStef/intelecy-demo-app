@@ -1,5 +1,6 @@
 using Demo.Core.CQRS.Tags;
 using Demo.Core.Ids;
+using Demo.Core.Persistence;
 using NodaTime;
 using NodaTime.Testing;
 
@@ -24,6 +25,7 @@ public class UpdateTests(Fixture fixture) : IClassFixture<Fixture>
         const string newUnit = "dfvb";
 
         var tag = await handler.Handle(new UpdateTagCommand(id, newName, newUnit), default);
+        
         // make sure some fields not changed
         Assert.Equal(fixture.Sites[0].Id, tag.SiteId);
         // make sure others are changed
@@ -31,8 +33,8 @@ public class UpdateTests(Fixture fixture) : IClassFixture<Fixture>
         Assert.Equal(newUnit, tag.Unit);
         
         // fetch from DB
-        await using var context = new DemoDbContext(fixture.Options);
-        var dbTag = await context.Tags.FindAsync(id.Value);
+        var dbTag = await GetTag(id);
+
         Assert.NotNull(dbTag);
         // make sure some fields not changed
         Assert.Equal(fixture.Sites[0].Id, dbTag.SiteId);
@@ -51,6 +53,7 @@ public class UpdateTests(Fixture fixture) : IClassFixture<Fixture>
         const string newUnit = "dfvb";
 
         var tag = await handler.Handle(new UpdateTagCommand(id, newName, newUnit), default);
+        
         // make sure some fields not changed
         Assert.Equal(fixture.Sites[0].Id, tag.SiteId);
         // make sure others are changed
@@ -58,8 +61,8 @@ public class UpdateTests(Fixture fixture) : IClassFixture<Fixture>
         Assert.Equal(newUnit, tag.Unit);
 
         // fetch from DB
-        await using var context = new DemoDbContext(fixture.Options);
-        var dbTag = await context.Tags.FindAsync(id.Value);
+        var dbTag = await GetTag(id);
+
         Assert.NotNull(dbTag);
         // make sure some fields not changed
         Assert.Equal(fixture.Sites[0].Id, dbTag.SiteId);
@@ -67,6 +70,12 @@ public class UpdateTests(Fixture fixture) : IClassFixture<Fixture>
         Assert.Equal(newName, dbTag.Name);
         Assert.Equal(newUnit, dbTag.Unit);
         Assert.Equal(Time, dbTag.UpdatedAt);
+    }
+
+    private async Task<Tag?> GetTag(TagId id)
+    {
+        await using var context = new DemoDbContext(fixture.Options);
+        return await context.Tags.FindAsync(id.Value);
     }
 
     [Fact]

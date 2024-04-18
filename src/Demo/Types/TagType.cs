@@ -17,12 +17,15 @@ public sealed class TagType : ObjectGraphType<Tag>
             .Resolve(x => IdEncoding.Encode(TagId.From(x.Source.Id)));
         Field(x => x.Name)
             .Description("The name of the tag");
-        Field(x => x.Description)
+        Field(x => x.Description, nullable: true)
             .Description("The description of the tag");
         Field(x => x.Unit, nullable: true)
             .Description("The unit for the sensor data");
         Field<NonNullGraphType<DateTimeGraphType>>("createdAt")
             .Description("When the tag was added")
             .Resolve(ctx => ctx.Source.CreatedAt.ToDateTimeUtc());
+        Field<NonNullGraphType<DateTimeGraphType>>("updatedAt")
+            .Description("When the tag was updated")
+            .Resolve(ctx => ctx.Source.UpdatedAt.ToDateTimeUtc());
     }
 }
