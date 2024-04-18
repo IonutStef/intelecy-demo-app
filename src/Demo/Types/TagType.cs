@@ -17,6 +17,8 @@ public sealed class TagType : ObjectGraphType<Tag>
             .Resolve(x => IdEncoding.Encode(TagId.From(x.Source.Id)));
         Field(x => x.Name)
             .Description("The name of the tag");
+        Field(x => x.Description)
+            .Description("The description of the tag");
         Field(x => x.Unit, nullable: true)
             .Description("The unit for the sensor data");
         Field<NonNullGraphType<DateTimeGraphType>>("createdAt")
