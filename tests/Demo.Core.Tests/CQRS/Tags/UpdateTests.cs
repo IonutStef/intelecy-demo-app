@@ -1,5 +1,8 @@
 using Demo.Core.CQRS.Tags;
 using Demo.Core.Ids;
+using Demo.Core.Persistence;
+using NodaTime.Testing;
+using Demo.Core.Tests.Constants;
 
 namespace Demo.Core.Tests.CQRS.Tags;
 
@@ -7,7 +10,7 @@ public class UpdateTests(Fixture fixture) : IClassFixture<Fixture>
 {
     private UpdateTagCommandHandler CreateHandler()
     {
-        return new UpdateTagCommandHandler(new TestDbContextFactory(fixture.Options));
+        return new UpdateTagCommandHandler(new TestDbContextFactory(fixture.Options), new FakeClock(TestConstants.MockedTime));
     }
 
     [Fact]
@@ -20,6 +23,7 @@ public class UpdateTests(Fixture fixture) : IClassFixture<Fixture>
         const string newUnit = "dfvb";
 
         var tag = await handler.Handle(new UpdateTagCommand(id, newName, newUnit), default);
+        
         // make sure some fields not changed
         Assert.Equal(fixture.Sites[0].Id, tag.SiteId);
         // make sure others are changed
@@ -27,14 +31,50 @@ public class UpdateTests(Fixture fixture) : IClassFixture<Fixture>
         Assert.Equal(newUnit, tag.Unit);
         
         // fetch from DB
-        await using var context = new DemoDbContext(fixture.Options);
-        var dbTag = await context.Tags.FindAsync(id.Value);
+        var dbTag = await GetTag(id);
+
         Assert.NotNull(dbTag);
         // make sure some fields not changed
         Assert.Equal(fixture.Sites[0].Id, dbTag.SiteId);
         // make sure others are changed
         Assert.Equal(newName, dbTag.Name);
         Assert.Equal(newUnit, dbTag.Unit);
+    }
+
+    [Fact]
+    public async Task Update_Should_SetUpdatedAt()
+    {
+        var handler = CreateHandler();
+
+        var id = TagId.From(fixture.Tags[2].Id);
+        const string newName = "sdfvdsfv";
+        const string newUnit = "dfvb";
+
+        var tag = await handler.Handle(new UpdateTagCommand(id, newName, newUnit), default);
+        
+        // make sure some fields not changed
+        Assert.Equal(fixture.Sites[0].Id, tag.SiteId);
+        // make sure others are changed
+        Assert.Equal(newName, tag.Name);
+        Assert.Equal(newUnit, tag.Unit);
+        Assert.Equal(TestConstants.MockedTime, tag.UpdatedAt);
+
+        // fetch from DB
+        var dbTag = await GetTag(id);
+
+        Assert.NotNull(dbTag);
+        // make sure some fields not changed
+        Assert.Equal(fixture.Sites[0].Id, dbTag.SiteId);
+        // make sure others are changed
+        Assert.Equal(newName, dbTag.Name);
+        Assert.Equal(newUnit, dbTag.Unit);
+        Assert.Equal(TestConstants.MockedTime, dbTag.UpdatedAt);
+    }
+
+    private async Task<Tag?> GetTag(TagId id)
+    {
+        await using var context = new DemoDbContext(fixture.Options);
+        return await context.Tags.FindAsync(id.Value);
     }
 
     [Fact]

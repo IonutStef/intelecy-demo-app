@@ -18,6 +18,7 @@ public class UpdateSiteCommandHandler(IDbContextFactory<DemoDbContext> contextFa
             throw new ArgumentException("not found");
 
         site.Name = request.Name;
+        await context.SaveChangesAsync(cancellationToken);
 
         return site;
     }
