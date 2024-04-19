@@ -1,18 +1,16 @@
 using Demo.Core.CQRS.Tags;
 using Demo.Core.Ids;
 using Demo.Core.Persistence;
-using NodaTime;
 using NodaTime.Testing;
+using Demo.Core.Tests.Constants;
 
 namespace Demo.Core.Tests.CQRS.Tags;
 
 public class UpdateTests(Fixture fixture) : IClassFixture<Fixture>
 {
-    private static readonly Instant Time = Instant.FromUtc(2024, 4, 2, 13, 49, 0);
-
     private UpdateTagCommandHandler CreateHandler()
     {
-        return new UpdateTagCommandHandler(new TestDbContextFactory(fixture.Options), new FakeClock(Time));
+        return new UpdateTagCommandHandler(new TestDbContextFactory(fixture.Options), new FakeClock(TestConstants.MockedTime));
     }
 
     [Fact]
@@ -59,6 +57,7 @@ public class UpdateTests(Fixture fixture) : IClassFixture<Fixture>
         // make sure others are changed
         Assert.Equal(newName, tag.Name);
         Assert.Equal(newUnit, tag.Unit);
+        Assert.Equal(TestConstants.MockedTime, tag.UpdatedAt);
 
         // fetch from DB
         var dbTag = await GetTag(id);
@@ -69,7 +68,7 @@ public class UpdateTests(Fixture fixture) : IClassFixture<Fixture>
         // make sure others are changed
         Assert.Equal(newName, dbTag.Name);
         Assert.Equal(newUnit, dbTag.Unit);
-        Assert.Equal(Time, dbTag.UpdatedAt);
+        Assert.Equal(TestConstants.MockedTime, dbTag.UpdatedAt);
     }
 
     private async Task<Tag?> GetTag(TagId id)
